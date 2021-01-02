@@ -51,8 +51,8 @@ var hubPass string // SoftEther API password
 var authEnc string // Authorization header `Basic base64(username:password)`
 
 func banner() {
-	fmt.Printf("GoVPN-API / SoftEther Management")
-	fmt.Printf("./%s <options> <cmd>", os.Args[0])
+	fmt.Printf("GoVPN-API / SoftEther Management\n")
+	fmt.Printf("./%s <options> <cmd>\n", os.Args[0])
 	fmt.Println("---\tOptions\t---")
 	fmt.Println("-p, --port\t Change service port of GoVPN-API")
 	fmt.Println("---\tcmd\t---")
