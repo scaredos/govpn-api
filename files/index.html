@@ -53,20 +53,20 @@
   <div class="input-group mb-3">
   <div class="input-group-prepend">
     </div>
-    <input placeholder="Hub Name (default VPN)" type="text" class="form-control" id="hub-username">
+    <input placeholder="Server IP" type="text" class="form-control" id="serverip">
+    <input placeholder="Hub Name" type="text" class="form-control" id="hub-username">
     <input placeholder="Hub Password" type="password" class="form-control"  id="hub-password">
     <button type="button" class="btn btn-dark" onclick="setAuthKey()">Execute</button>
   </div>
-  <div class="input-group mb-3">
+  <div class="input-group mb-3" id="username-password">
   <div class="input-group-prepend">
     </div>
-    <input placeholder="Username" type="text" class="form-control" id="username">
-    <input placeholder="Password" type="password" class="form-control"  id="password">
+
   </div>
   <div class="input-group mb-3">
   <div class="input-group-prepend">
     </div>
-    <input placeholder="Server IP" type="text" class="form-control" id="serverip">
+
     <input list="options" placeholder="Option" class="form-control" id="opt-select">
     <datalist id="options">
       <option value="Create User">
@@ -77,13 +77,37 @@
     </datalist>
     <button type="button" class="btn btn-dark" onclick="AlertInit()">Execute</button>
   </div>
+  <div class="input-group mb-3" id="expdirr">
+
+  </div>
   <p id='results' class='lead' style="color:white;"></p>
   <footer class="footer fixed-bottom position-fixed">
     <div class="container">
       <span class="text-muted">Steven © 2021</span>
     </div>
   </footer>
-    <script src="main.js"></script>
+    <script async>
+    function popUp(value) {
+      if (value == 'Delete User' || value == 'View User Info') {
+        document.getElementById('username-password').innerHTML = `<input placeholder="Username" type="text" class="form-control" id="username">`
+      } else if (value == 'Create User' || value == 'Change Password') {
+        document.getElementById('username-password').innerHTML = `<input placeholder="Username" type="text" class="form-control" id="username"><input placeholder="Password" type="password" class="form-control"  id="password">`
+      } else if (value == 'Change Expiration Date') {
+        document.getElementById('username-password').innerHTML = `<input placeholder="Username" type="text" class="form-control" id="username">`
+        document.getElementById('expdirr').innerHTML = `<input placeholder="Expiration Date" type="date" class="form-control" id="expdir">`
+      } else {
+        document.getElementById('expdirr').innerHTML = '';
+        document.getElementById('username-password').innerHTML = '';
+      }
+    }
+
+    const optionListener = document.getElementById('opt-select');
+
+    optionListener.addEventListener('change', (event) => {
+      popUp(event.target.value)
+    });
+  </script>
+    <script async src="main.js"></script>
     <script async src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script async src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
     <script async src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
