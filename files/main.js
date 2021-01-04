@@ -1,11 +1,11 @@
 function AlertInit() {
   let website = window.location.href.split('/')[2]
-  let username = document.getElementById('username').value
-  let password = btoa(document.getElementById('password').value)
   let serverip = document.getElementById('serverip').value
   let option = document.getElementById('opt-select').value
   var req = new XMLHttpRequest();
   if (option == 'Create User') {
+    let username = document.getElementById('username').value
+    let password = btoa(document.getElementById('password').value)
     req.open("GET", `http://${website}/createUser?username=${username}&password=${password}&sip=${serverip}`);
     req.send();
     req.onload = function() {
@@ -21,6 +21,7 @@ function AlertInit() {
       }
     };
   } else if (option == 'Delete User') {
+    let username = document.getElementById('username').value
     req.open("GET", `http://${website}/deleteUser?username=${username}&sip=${serverip}`);
     req.send();
     req.onload = function() {
@@ -36,6 +37,8 @@ function AlertInit() {
       }
     };
   } else if (option == 'Change Password') {
+    let username = document.getElementById('username').value
+    let password = btoa(document.getElementById('password').value)
     req.open("GET", `http://${website}/changePassword?username=${username}&password=${password}&sip=${serverip}`);
     req.send();
     req.onload = function() {
@@ -48,6 +51,7 @@ function AlertInit() {
   } else if (option == 'Change Expiration Date') {
     // Not Yet
   } else if (option == 'View User Info') {
+    let username = document.getElementById('username').value
     req.open("GET", `http://${website}/getUser?username=${username}&sip=${serverip}`);
     req.send();
     req.onload = function() {
