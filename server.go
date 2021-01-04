@@ -136,7 +136,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	client := &http.Client{Transport: tr}
 	currentTime := time.Now()
 	futureTime := currentTime.AddDate(0, 1, 0)
-	mapA := map[string]interface{}{"HubName_str": "VPN", "Name_str": username, "CreatedTime_dt": currentTime.Format("2006-01-2T15:04:05.000Z"), "AuthType_u32": 1, "Auth_Password_str": password, "ExpireTime_dt": futureTime.Format("2006-01-02T15:04:05.000Z")}
+	mapA := map[string]interface{}{"HubName_str": "VPN", "Name_str": username, "CreatedTime_dt": currentTime.Format("2006-01-2T15:04:05.000Z"), "AuthType_u32": 1, "Auth_Password_str": string(password), "ExpireTime_dt": futureTime.Format("2006-01-02T15:04:05.000Z")}
 	mapB := map[string]interface{}{"jsonrpc": "2.0", "id": "rpc_call_id", "method": "CreateUser", "params": mapA}
 	mapC, _ := json.Marshal(mapB) // Create map of mapA and mapB
 	req, _ := http.NewRequest("POST", url, bytes.NewReader(mapC))
@@ -152,6 +152,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	}
 	//fmt.Fprintf(w, "success")
 	fmt.Fprintf(w, string(body))
+	fmt.Println(string(password))
 }
 
 // Delete's user
@@ -191,7 +192,7 @@ func changePassword(w http.ResponseWriter, r *http.Request) {
 	data := getUser(username, serverip)
 	createdtime := data.Result.CreatedTimeDt
 	expiredtime := data.Result.ExpireTimeDt
-	mapA := map[string]interface{}{"HubName_str": "VPN", "Name_str": username, "CreatedTime_dt": createdtime, "ExpireTime_dt": expiredtime, "AuthType_u32": 1, "Auth_Password_str": password}
+	mapA := map[string]interface{}{"HubName_str": "VPN", "Name_str": username, "CreatedTime_dt": createdtime, "ExpireTime_dt": expiredtime, "AuthType_u32": 1, "Auth_Password_str": string(password)}
 	mapB := map[string]interface{}{"jsonrpc": "2.0", "id": "rpc_call_id", "method": "SetUser", "params": mapA}
 	mapC, _ := json.Marshal(mapB) // Create map of mapA and mapB
 	req, _ := http.NewRequest("POST", url, bytes.NewReader(mapC))
