@@ -17,7 +17,7 @@ GET /init?hubuser=hubuser&hubpass=hubpass
 ```
 username: User username
 password: User password (base64 encoded)
-serverip: SoftEther Server IP (E.x.: 127.0.0.1:443)
+sip     : SoftEther Server IP (E.x.: 127.0.0.1:443)
 ```
 
 ## Delete User
@@ -25,7 +25,7 @@ serverip: SoftEther Server IP (E.x.: 127.0.0.1:443)
 - Parameters
 ```
 username: User username
-serverip: SoftEther Server IP (E.x.: 127.0.0.1:443)
+sip     : SoftEther Server IP (E.x.: 127.0.0.1:443)
 ```
 
 ## Change Password of User
@@ -37,10 +37,20 @@ password: New user password (base64 encoded)
 serverip: SoftEther Server IP (E.x.: 127.0.0.1:443)
 ```
 
+## Set Expiration Date
+- Endpoint (/setExpireDate)
+- Parameters
+```
+username: User username
+expdate : Expiration Date (date object) (2014-10-12T00:00:00.000Z)
+sip     : SoftEther Server IP (E.x.: 127.0.0.1:443)
+```
+
+
 ## Get User Info
 - Endpoint (/getUser)
 - Parameters
 ```
 username: User username
-serverip: SoftEther Server IP (E.x.: 127.0.0.1:443)
+sip     : SoftEther Server IP (E.x.: 127.0.0.1:443)
 ```
