@@ -51,9 +51,8 @@ function AlertInit() {
   } else if (option == 'Change Expiration Date') {
     let username = document.getElementById('username').value
     let expdate = document.getElementById('expdir').value
-    expdate = expdate + "T00:01:00.000Z"
+    expdate = expdate + "T12:00:00.123Z"
     req.open("GET", `http://${website}/setExpireDate?username=${username}&sip=${serverip}&expdate=${expdate}`);
-    req.open("GET", `http://${website}/getUser?username=${username}&sip=${serverip}`);
     req.send();
     req.onload = function() {
       if (req.readyState === req.DONE) {
@@ -102,4 +101,35 @@ function setAuthKey() {
       }
     }
   };
+}
+
+function showUsers() {
+  var userTable = document.getElementById('userTable');
+  userTable.innerHTML = '<table class="table table-borderless" id="userTable" style="color: white;"><thead><tr><th scope="col">Username</th><th scope="col">Expiration</th><th scope="col">Last Login</th></tr></thead><tbody></tbody></table>';
+  var req = new XMLHttpRequest();
+  let website = window.location.href.split('/')[2]
+  let serverip = document.getElementById('serverip').value
+  if (serverip == undefined || serverip.indexOf(' ')) {
+    alert('Please ensure you have set the Server IP, Hub User, and Hub Password properly')
+    return
+  }
+  req.open("GET", `http://${website}/listUsers?sip=${serverip}`);
+  req.send();
+  req.onload = function() {
+    if (req.readyState === req.DONE) {
+      if (req.status === 200) {
+        let response = JSON.parse(req.response)
+        var list = response['result']['UserList']
+        list.forEach(user => {
+          let username = user['Name_str'];
+          let expdate = user['Expires_dt'];
+          let lastlogin = user['LastLoginTime_dt'];
+          let row = userTable.insertRow(1);
+          let cell1 = row.insertCell(0).innerHTML = username;
+          let cell2 = row.insertCell(1).innerHTML = expdate.replace('T', ' ').replace('Z', '');
+          let cell3 = row.insertCell(2).innerHTML = lastlogin.replace('T', ' ').replace('Z', '');
+        });
+      }
+    }
+  }
 }
