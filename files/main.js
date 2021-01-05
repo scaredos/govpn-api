@@ -49,7 +49,21 @@ function AlertInit() {
       }
     }
   } else if (option == 'Change Expiration Date') {
-    // Not Yet
+    let username = document.getElementById('username').value
+    let expdate = document.getElementById('expdir').value
+    expdate = expdate + "T00:01:00.000Z"
+    req.open("GET", `http://${website}/setExpireDate?username=${username}&sip=${serverip}&expdate=${expdate}`);
+    req.open("GET", `http://${website}/getUser?username=${username}&sip=${serverip}`);
+    req.send();
+    req.onload = function() {
+      if (req.readyState === req.DONE) {
+        if (req.status === 200) {
+          alert('Changed Expiration Date');
+        } else {
+          alert('unexpected error')
+        }
+      }
+    };
   } else if (option == 'View User Info') {
     let username = document.getElementById('username').value
     req.open("GET", `http://${website}/getUser?username=${username}&sip=${serverip}`);
@@ -83,7 +97,7 @@ function setAuthKey() {
         if (response == 'error') {
           alert('Error')
         } else {
-          alert('Set Hub Username and Password');
+          alert('Successful Login');
         }
       }
     }
