@@ -89,12 +89,13 @@ func main() {
 	http.HandleFunc("/changePassword", changePassword)
 	http.HandleFunc("/setExpireDate", setExpireDate)
 	http.HandleFunc("/getUser", viewUser)
+	http.HandleFunc("/listUsers", listUsers)
 	http.HandleFunc("/init", setToken)
 	port := fmt.Sprintf(":%s", sport)
 	http.ListenAndServe(port, nil)
 }
 
-// Returns type ApiData for changePassword, setExpireData, viewUser
+// Returns type ApiData for changePassword, setExpireDate, viewUser
 func getUser(username string, serverip string) ApiData {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -152,7 +153,6 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	}
 	//fmt.Fprintf(w, "success")
 	fmt.Fprintf(w, string(body))
-	fmt.Println(string(password))
 }
 
 // Delete's user
@@ -212,7 +212,7 @@ func changePassword(w http.ResponseWriter, r *http.Request) {
 // Sets account expiration date
 func setExpireDate(w http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query()["username"][0]
-	expdir := r.URL.Query()["expdate"]
+	expdir := r.URL.Query()["expdate"][0]
 	serverip := r.URL.Query()["sip"][0]
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -243,6 +243,25 @@ func viewUser(w http.ResponseWriter, r *http.Request) {
 	data := getUser(username, serverip)                        // getUser as ApiData
 	m, _ := json.Marshal(map[string]interface{}{"data": data}) // JSON marshal ApiData in map
 	fmt.Fprintf(w, fmt.Sprintf("%v", string(m)))
+}
+
+func listUsers(w http.ResponseWriter, r *http.Request) {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	serverip := r.URL.Query()["sip"][0]
+	url := fmt.Sprintf("https://%s/api", serverip)
+	mapA := map[string]interface{}{"HubName_str": "VPN"}
+	mapB := map[string]interface{}{"jsonrpc": "2.0", "id": "rpc_call_id", "method": "EnumUser", "params": mapA}
+	mapC, _ := json.Marshal(mapB)
+	req, _ := http.NewRequest("POST", url, bytes.NewReader(mapC))
+	req.Header.Set("Authorization", authEnc)           // Set Authorization header with global authEnc
+	req.Header.Set("Content-Type", "application/json") // Set content-type to json
+	resp, _ := client.Do(req)                          // Execute request
+	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
+	//fmt.Fprintf(w, "success")
+	fmt.Fprintf(w, string(body))
 }
 
 // Set hubUser, hubPass, and base64 encode authEnc for Authorization header
