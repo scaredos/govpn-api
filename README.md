@@ -12,4 +12,4 @@
 - To run only the API, try `./server runapi`
 - To run with web management, try `./server run`
 - All documentation is available at [Documentation](https://github.com/Unknown-Industries-LLC/govpn-api/tree/main/docs)
-![](https://i.imgur.com/QF2JI9m.gif)
+![](https://i.imgur.com/vGmAqz2.gif)
