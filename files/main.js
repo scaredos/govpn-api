@@ -109,7 +109,7 @@ function showUsers() {
   var req = new XMLHttpRequest();
   let website = window.location.href.split('/')[2]
   let serverip = document.getElementById('serverip').value
-  if (serverip == undefined || serverip.indexOf(' ')) {
+  if (serverip === undefined) {
     alert('Please ensure you have set the Server IP, Hub User, and Hub Password properly')
     return
   }
