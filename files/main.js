@@ -1,6 +1,6 @@
 function AlertInit() {
   let website = window.location.href.split('/')[2]
-  let serverip = document.getElementById('serverip').value
+  let serverip = document.getElementById('serverIP').innerHTML.split(':')[1].replace(' ', '');
   let option = document.getElementById('opt-select').value
   var req = new XMLHttpRequest();
   if (option == 'Create User') {
@@ -11,9 +11,11 @@ function AlertInit() {
     req.onload = function() {
       if (req.readyState === req.DONE) {
         if (req.status === 200) {
-          var response = JSON.parse(req.response);
-          if (response['error']) {
-            alert('User already exists')
+          var response = JSON.parse(req.response.toString());
+          if (response['buy'] == 'true') {
+            alert(response['error']);
+          } else if (response['status'] == 'fail') {
+            alert('User already exists');
           } else {
             alert('Created User');
           }
@@ -28,8 +30,10 @@ function AlertInit() {
       if (req.readyState === req.DONE) {
         if (req.status === 200) {
           var response = JSON.parse(req.response);
-          if (response['error']) {
+          if (response['status'] == 'fail') {
             alert('User already deleted or does not exist')
+          } else if (response['status'] == 'fail' && response['error'].includes('purchase')) {
+            alert(response['error']);
           } else {
             alert('Deleted User');
           }
@@ -82,11 +86,20 @@ function AlertInit() {
   }
 }
 
+function setServerData(serverip, hubuser) {
+  let hubb = document.getElementById('container1');
+  hubb.innerHTML += `<br><div class="container-sm manage-info"><p>Management Information</p><p id="serverIP">Server IP: ${serverip}</p><p id="hubUsername">Hub User: ${hubuser}</p></div>`;
+  let hub = document.getElementsByClassName('serverSettings')
+  hub[0].innerHTML = '';
+  hub[1].innerHTML = '';
+}
+
 function setAuthKey() {
   let website = window.location.href.split('/')[2]
   var req = new XMLHttpRequest();
-  let hubUsername = document.getElementById('hub-username').value
-  let hubPassword = document.getElementById('hub-password').value
+  let serverip = document.getElementById('serverip').value;
+  let hubUsername = document.getElementById('hub-username').value;
+  let hubPassword = document.getElementById('hub-password').value;
   req.open("GET", `http://${website}/init?hubuser=${hubUsername}&hubpass=${hubPassword}`);
   req.send();
   req.onload = function() {
@@ -96,6 +109,7 @@ function setAuthKey() {
         if (response == 'error') {
           alert('Error')
         } else {
+          setServerData(serverip, hubUsername);
           alert('Successful Login');
         }
       }
@@ -108,7 +122,7 @@ function showUsers() {
   userTable.innerHTML = '<table class="table table-borderless" id="userTable" style="color: white;"><thead><tr><th scope="col">Username</th><th scope="col">Expiration</th><th scope="col">Last Login</th></tr></thead><tbody></tbody></table>';
   var req = new XMLHttpRequest();
   let website = window.location.href.split('/')[2]
-  let serverip = document.getElementById('serverip').value
+  let serverip = document.getElementById('serverIP').innerHTML.split(':')[1].replace(' ', '');
   if (serverip === undefined) {
     alert('Please ensure you have set the Server IP, Hub User, and Hub Password properly')
     return
