@@ -10,9 +10,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
-  "strconv"
 )
 
 // ApiData struct for using returned JSON from JSON-RPC API
@@ -48,14 +48,15 @@ type EnumUser struct {
 	Jsonrpc string `json:"jsonrpc"`
 	ID      string `json:"id"`
 	Result  struct {
-		HubNameStr string        `json:"HubName_str"`
+		HubNameStr string    `json:"HubName_str"`
 		UserList   []ApiData `json:"UserList"`
 	} `json:"result"`
 }
+
 // Define global variable for SoftEther API Authentication
-var hubUser string // SoftEther API username
-var hubPass string // SoftEther API password
-var authEnc string // Authorization header `Basic base64(username:password)`
+var hubUser string       // SoftEther API username
+var hubPass string       // SoftEther API password
+var authEnc string       // Authorization header `Basic base64(username:password)`
 var userLimit int        // UnknownVPN Managment System
 var govpnUsername string // UnknownVPN Management System
 var govpnToken string    // UnknownVPN Management System
@@ -103,6 +104,7 @@ func main() {
 	url := fmt.Sprintf("http://govpnapi.unknownvpn.net:2052/api/v1/userCount?username=%s&token=%s", govpnUsername, govpnToken)
 	req, _ := http.NewRequest("GET", url, nil)
 	resp, err := client.Do(req) // Execute
+	defer resp.Body.close()
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -126,15 +128,14 @@ func main() {
 	http.ListenAndServe(port, nil)
 }
 
-
 // Get current user count from the server
 func getUserCount(serverip string) int {
-  tr := &http.Transport{
+	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-  url := fmt.Sprintf("https://%s/api", serverip)
-  mapA := map[string]interface{}{"HubName_str": "VPN"}
+	url := fmt.Sprintf("https://%s/api", serverip)
+	mapA := map[string]interface{}{"HubName_str": "VPN"}
 	mapB := map[string]interface{}{"jsonrpc": "2.0", "id": "rpc_call_id", "method": "EnumUser", "params": mapA}
 	mapC, _ := json.Marshal(mapB)
 	req, _ := http.NewRequest("POST", url, bytes.NewReader(mapC))
@@ -142,14 +143,15 @@ func getUserCount(serverip string) int {
 	req.Header.Set("Content-Type", "application/json") // Set content-type to json
 	resp, _ := client.Do(req)                          // Execute request
 	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
-  data := EnumUser{}
+	defer resp.Body.close()
+	data := EnumUser{}
 	re := bytes.NewReader([]byte(body))
 	chatErr := json.NewDecoder(re).Decode(&data)
 	if chatErr != nil {
 		fmt.Println(chatErr)
 	}
-  count := len(data.Result.UserList)
-  return count
+	count := len(data.Result.UserList)
+	return count
 }
 
 // Returns type ApiData for changePassword, setExpireDate, viewUser
@@ -167,6 +169,7 @@ func getUser(username string, serverip string) ApiData {
 	req.Header.Set("Content-Type", "application/json") // Set content-type to json
 	resp, _ := client.Do(req)                          // Execute request
 	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
+	defer resp.Body.close()
 	data := ApiData{}
 	re := bytes.NewReader([]byte(body))
 	chatErr := json.NewDecoder(re).Decode(&data)
@@ -184,65 +187,67 @@ func setToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func createUser(w http.ResponseWriter, r *http.Request) {
-  username := r.URL.Query()["username"][0]
+	username := r.URL.Query()["username"][0]
 	passw := r.URL.Query()["password"][0]
 	password, err := base64.StdEncoding.DecodeString(passw)
-  if err != nil {
+	if err != nil {
 		fmt.Fprintf(w, "error")
 		return
 	}
-  serverip := r.URL.Query()["sip"][0]
-  tr := &http.Transport{
+	serverip := r.URL.Query()["sip"][0]
+	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-  userCount := getUserCount(serverip)
-  if userCount > userLimit {
-    fmt.Fprintf(w, "{\"status\": \"fail\", \"buy\": \"true\", \"error\": \"You exceeded the max users for your plan, purchase a higher plan to continue API Usage\"}")
-    return
-  } else {
-    url := fmt.Sprintf("https://%s/api", serverip)
-    client := &http.Client{Transport: tr}
-    currentTime := time.Now()
-  	futureTime := currentTime.AddDate(0, 1, 0)
-  	mapA := map[string]interface{}{"HubName_str": "VPN", "Name_str": username, "CreatedTime_dt": currentTime.Format("2006-01-2T15:04:05.000Z"), "AuthType_u32": 1, "Auth_Password_str": string(password), "ExpireTime_dt": futureTime.Format("2006-01-02T15:04:05.000Z")}
-  	mapB := map[string]interface{}{"jsonrpc": "2.0", "id": "rpc_call_id", "method": "CreateUser", "params": mapA}
-  	mapC, _ := json.Marshal(mapB) // Create map of mapA and mapB
-  	req, _ := http.NewRequest("POST", url, bytes.NewReader(mapC))
-  	req.Header.Set("Authorization", authEnc)           // Set Authorization header with global authEnc
-  	req.Header.Set("Content-Type", "application/json") // Set content-type to json
-  	resp, _ := client.Do(req)                          // Execute request
-  	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
-  	if strings.Contains(string(body), "Error code 66") {
-  		fmt.Fprintf(w, fmt.Sprintf("{\"status\": \"fail\", \"error\": %s}", string(body)))
-  		//fmt.Fprintf(w, "error")
-  		return
-  	}
-  	//fmt.Fprintf(w, "success")
-  	fmt.Fprintf(w, "{\"status\": \"pass\"}")
-  }
+	userCount := getUserCount(serverip)
+	if userCount > userLimit {
+		fmt.Fprintf(w, "{\"status\": \"fail\", \"buy\": \"true\", \"error\": \"You exceeded the max users for your plan, purchase a higher plan to continue API Usage\"}")
+		return
+	} else {
+		url := fmt.Sprintf("https://%s/api", serverip)
+		client := &http.Client{Transport: tr}
+		currentTime := time.Now()
+		futureTime := currentTime.AddDate(0, 1, 0)
+		mapA := map[string]interface{}{"HubName_str": "VPN", "Name_str": username, "CreatedTime_dt": currentTime.Format("2006-01-2T15:04:05.000Z"), "AuthType_u32": 1, "Auth_Password_str": string(password), "ExpireTime_dt": futureTime.Format("2006-01-02T15:04:05.000Z")}
+		mapB := map[string]interface{}{"jsonrpc": "2.0", "id": "rpc_call_id", "method": "CreateUser", "params": mapA}
+		mapC, _ := json.Marshal(mapB) // Create map of mapA and mapB
+		req, _ := http.NewRequest("POST", url, bytes.NewReader(mapC))
+		req.Header.Set("Authorization", authEnc)           // Set Authorization header with global authEnc
+		req.Header.Set("Content-Type", "application/json") // Set content-type to json
+		resp, _ := client.Do(req)                          // Execute request
+		body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
+		defer resp.Body.close()
+		if strings.Contains(string(body), "Error code 66") {
+			fmt.Fprintf(w, fmt.Sprintf("{\"status\": \"fail\", \"error\": %s}", string(body)))
+			//fmt.Fprintf(w, "error")
+			return
+		}
+		//fmt.Fprintf(w, "success")
+		fmt.Fprintf(w, "{\"status\": \"pass\"}")
+	}
 }
 
 func deleteUser(w http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query()["username"][0]
 	serverip := r.URL.Query()["sip"][0]
-    tr := &http.Transport{
-  		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-  	}
-  	client := &http.Client{Transport: tr}
-  	url := fmt.Sprintf("https://%s/api", serverip)
-  	mapA := map[string]interface{}{"HubName_str": "VPN", "Name_str": username}
-  	mapB := map[string]interface{}{"jsonrpc": "2.0", "id": "rpc_call_id", "method": "DeleteUser", "params": mapA}
-  	mapC, _ := json.Marshal(mapB) // Create map of mapA and mapB
-  	req, _ := http.NewRequest("POST", url, bytes.NewReader(mapC))
-  	req.Header.Set("Authorization", authEnc)           // Set Authorization header with global authEnc
-  	req.Header.Set("Content-Type", "application/json") // Set content-type to json
-  	resp, _ := client.Do(req)                          // Execute request
-  	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
-  	if strings.Contains(string(body), "Error code") {
-			fmt.Fprintf(w, fmt.Sprintf("{\"status\": \"fail\", \"error\": %s}", string(body)))
-			return
-		}
-		fmt.Fprintf(w, "{\"status\": \"pass\"}")
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	url := fmt.Sprintf("https://%s/api", serverip)
+	mapA := map[string]interface{}{"HubName_str": "VPN", "Name_str": username}
+	mapB := map[string]interface{}{"jsonrpc": "2.0", "id": "rpc_call_id", "method": "DeleteUser", "params": mapA}
+	mapC, _ := json.Marshal(mapB) // Create map of mapA and mapB
+	req, _ := http.NewRequest("POST", url, bytes.NewReader(mapC))
+	req.Header.Set("Authorization", authEnc)           // Set Authorization header with global authEnc
+	req.Header.Set("Content-Type", "application/json") // Set content-type to json
+	resp, _ := client.Do(req)                          // Execute request
+	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
+	defer resp.Body.close()
+	if strings.Contains(string(body), "Error code") {
+		fmt.Fprintf(w, fmt.Sprintf("{\"status\": \"fail\", \"error\": %s}", string(body)))
+		return
+	}
+	fmt.Fprintf(w, "{\"status\": \"pass\"}")
 }
 
 func changePassword(w http.ResponseWriter, r *http.Request) {
@@ -250,56 +255,57 @@ func changePassword(w http.ResponseWriter, r *http.Request) {
 	passw := r.URL.Query()["password"][0]
 	password, _ := base64.StdEncoding.DecodeString(passw)
 	serverip := r.URL.Query()["sip"][0]
-    tr := &http.Transport{
-      TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-    }
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 
-    url := fmt.Sprintf("https://%s/api", serverip)
-    client := &http.Client{Transport: tr}
-    data := getUser(username, serverip)
-    createdtime := data.Result.CreatedTimeDt
-    expiredtime := data.Result.ExpireTimeDt
-    mapA := map[string]interface{}{"HubName_str": "VPN", "Name_str": username, "CreatedTime_dt": createdtime, "ExpireTime_dt": expiredtime, "AuthType_u32": 1, "Auth_Password_str": string(password)}
-    mapB := map[string]interface{}{"jsonrpc": "2.0", "id": "rpc_call_id", "method": "SetUser", "params": mapA}
-    mapC, _ := json.Marshal(mapB) // Create map of mapA and mapB
-    req, _ := http.NewRequest("POST", url, bytes.NewReader(mapC))
-    req.Header.Set("Authorization", authEnc)           // Set Authorization header with global authEnc
-    req.Header.Set("Content-Type", "application/json") // Set content-type to json
-    resp, _ := client.Do(req)                          // Execute request
-    body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
-    if strings.Contains(string(body), "Error code 66") {
-      fmt.Fprintf(w, string(body))
-      //fmt.Fprintf(w, "error")
-      return
-    }
-    //fmt.Fprintf(w, "success")
-    fmt.Fprintf(w, string(body))
+	url := fmt.Sprintf("https://%s/api", serverip)
+	client := &http.Client{Transport: tr}
+	data := getUser(username, serverip)
+	createdtime := data.Result.CreatedTimeDt
+	expiredtime := data.Result.ExpireTimeDt
+	mapA := map[string]interface{}{"HubName_str": "VPN", "Name_str": username, "CreatedTime_dt": createdtime, "ExpireTime_dt": expiredtime, "AuthType_u32": 1, "Auth_Password_str": string(password)}
+	mapB := map[string]interface{}{"jsonrpc": "2.0", "id": "rpc_call_id", "method": "SetUser", "params": mapA}
+	mapC, _ := json.Marshal(mapB) // Create map of mapA and mapB
+	req, _ := http.NewRequest("POST", url, bytes.NewReader(mapC))
+	req.Header.Set("Authorization", authEnc)           // Set Authorization header with global authEnc
+	req.Header.Set("Content-Type", "application/json") // Set content-type to json
+	resp, _ := client.Do(req)                          // Execute request
+	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
+	defer resp.Body.close()
+	if strings.Contains(string(body), "Error code 66") {
+		fmt.Fprintf(w, string(body))
+		//fmt.Fprintf(w, "error")
+		return
+	}
+	//fmt.Fprintf(w, "success")
+	fmt.Fprintf(w, string(body))
 }
 
 func setExpireDate(w http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query()["username"][0]
 	expdir := r.URL.Query()["expdate"][0]
 	serverip := r.URL.Query()["sip"][0]
-    tr := &http.Transport{
-  		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-  	}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 
-  	url := fmt.Sprintf("https://%s/api", serverip)
-  	client := &http.Client{Transport: tr}
-  	data := getUser(username, serverip)
-  	createdtime := data.Result.CreatedTimeDt
-  	securehash := data.Result.NtLmSecureHashBin
-  	hashedkey := data.Result.HashedKeyBin
-  	mapA := map[string]interface{}{"HubName_str": "VPN", "Name_str": username, "CreatedTime_dt": createdtime, "ExpireTime_dt": expdir, "AuthType_u32": 1, "NtLmSecureHash_bin": securehash, "HashedKey_bin": hashedkey}
-  	mapB := map[string]interface{}{"jsonrpc": "2.0", "id": "rpc_call_id", "method": "SetUser", "params": mapA}
-  	mapC, _ := json.Marshal(mapB) // Create map of mapA and mapB
-  	req, _ := http.NewRequest("POST", url, bytes.NewReader(mapC))
-  	req.Header.Set("Authorization", authEnc)           // Set Authorization header with global authEnc
-  	req.Header.Set("Content-Type", "application/json") // Set content-type to json
-  	resp, _ := client.Do(req)                          // Execute request
-  	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
-  	//fmt.Fprintf(w, "success")
-  	fmt.Fprintf(w, string(body))
+	url := fmt.Sprintf("https://%s/api", serverip)
+	client := &http.Client{Transport: tr}
+	data := getUser(username, serverip)
+	createdtime := data.Result.CreatedTimeDt
+	securehash := data.Result.NtLmSecureHashBin
+	hashedkey := data.Result.HashedKeyBin
+	mapA := map[string]interface{}{"HubName_str": "VPN", "Name_str": username, "CreatedTime_dt": createdtime, "ExpireTime_dt": expdir, "AuthType_u32": 1, "NtLmSecureHash_bin": securehash, "HashedKey_bin": hashedkey}
+	mapB := map[string]interface{}{"jsonrpc": "2.0", "id": "rpc_call_id", "method": "SetUser", "params": mapA}
+	mapC, _ := json.Marshal(mapB) // Create map of mapA and mapB
+	req, _ := http.NewRequest("POST", url, bytes.NewReader(mapC))
+	req.Header.Set("Authorization", authEnc)           // Set Authorization header with global authEnc
+	req.Header.Set("Content-Type", "application/json") // Set content-type to json
+	resp, _ := client.Do(req)                          // Execute request
+	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
+	defer resp.Body.close()
+	fmt.Fprintf(w, string(body))
 }
 
 func viewUser(w http.ResponseWriter, r *http.Request) {
@@ -316,15 +322,15 @@ func listUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	client := &http.Client{Transport: tr}
 	serverip := r.URL.Query()["sip"][0]
-    url := fmt.Sprintf("https://%s/api", serverip)
-  	mapA := map[string]interface{}{"HubName_str": "VPN"}
-  	mapB := map[string]interface{}{"jsonrpc": "2.0", "id": "rpc_call_id", "method": "EnumUser", "params": mapA}
-  	mapC, _ := json.Marshal(mapB)
-  	req, _ := http.NewRequest("POST", url, bytes.NewReader(mapC))
-  	req.Header.Set("Authorization", authEnc)           // Set Authorization header with global authEnc
-  	req.Header.Set("Content-Type", "application/json") // Set content-type to json
-  	resp, _ := client.Do(req)                          // Execute request
-  	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
-  	//fmt.Fprintf(w, "success")
-  	fmt.Fprintf(w, string(body))
+	url := fmt.Sprintf("https://%s/api", serverip)
+	mapA := map[string]interface{}{"HubName_str": "VPN"}
+	mapB := map[string]interface{}{"jsonrpc": "2.0", "id": "rpc_call_id", "method": "EnumUser", "params": mapA}
+	mapC, _ := json.Marshal(mapB)
+	req, _ := http.NewRequest("POST", url, bytes.NewReader(mapC))
+	req.Header.Set("Authorization", authEnc)           // Set Authorization header with global authEnc
+	req.Header.Set("Content-Type", "application/json") // Set content-type to json
+	resp, _ := client.Do(req)                          // Execute request
+	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
+	defer resp.Body.close()
+	fmt.Fprintf(w, string(body))
 }
