@@ -193,7 +193,6 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		}
 		//fmt.Fprintf(w, "success")
 		fmt.Fprintf(w, "{\"status\": \"pass\"}")
-	}
 }
 
 func deleteUser(w http.ResponseWriter, r *http.Request) {
