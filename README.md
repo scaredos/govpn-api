@@ -10,7 +10,9 @@
 
 ### Usage
 - To run only the API, try `./server runapi`
-- To run with web management, try `./server run`
+- To run with web management:
+-   - Try: `./server run`
+-   - Visit `http://localhost:1337/api`
 - All documentation is available at [Documentation](https://github.com/scaredos/govpn-api/tree/main/docs)
 ![](https://i.imgur.com/vGmAqz2.gif)
 
