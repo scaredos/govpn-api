@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -62,7 +61,7 @@ func banner() {
 	fmt.Printf("GoVPN-API / SoftEther Management\n")
 	fmt.Printf("%s <options> <cmd>\n", os.Args[0])
 	fmt.Println("---\tOptions\t---")
-	fmt.Println("-p, --port\t Change service port of GoVPN-API\t(Required)")
+	fmt.Println("-p, --port\t Change service port of GoVPN-API")
 	fmt.Println("---\tcmd\t---")
 	fmt.Println("run\tRun the API & Web Server\t(Required)")
 	fmt.Println("runapi\tRun the API only\t(Required)")
@@ -117,7 +116,7 @@ func getUserCount(serverip string) int {
 	req.Header.Set("Content-Type", "application/json") // Set content-type to json
 	resp, _ := client.Do(req)                          // Execute request
 	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
-	defer resp.Body.close()
+	defer resp.Body.Close()
 	data := EnumUser{}
 	re := bytes.NewReader([]byte(body))
 	chatErr := json.NewDecoder(re).Decode(&data)
@@ -143,7 +142,7 @@ func getUser(username string, serverip string) ApiData {
 	req.Header.Set("Content-Type", "application/json") // Set content-type to json
 	resp, _ := client.Do(req)                          // Execute request
 	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
-	defer resp.Body.close()
+	defer resp.Body.Close()
 	data := ApiData{}
 	re := bytes.NewReader([]byte(body))
 	chatErr := json.NewDecoder(re).Decode(&data)
@@ -172,7 +171,6 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-	userCount := getUserCount(serverip)
 		url := fmt.Sprintf("https://%s/api", serverip)
 		client := &http.Client{Transport: tr}
 		currentTime := time.Now()
@@ -185,7 +183,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		req.Header.Set("Content-Type", "application/json") // Set content-type to json
 		resp, _ := client.Do(req)                          // Execute request
 		body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
-		defer resp.Body.close()
+		defer resp.Body.Close()
 		if strings.Contains(string(body), "Error code 66") {
 			fmt.Fprintf(w, fmt.Sprintf("{\"status\": \"fail\", \"error\": %s}", string(body)))
 			//fmt.Fprintf(w, "error")
@@ -211,7 +209,7 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 	req.Header.Set("Content-Type", "application/json") // Set content-type to json
 	resp, _ := client.Do(req)                          // Execute request
 	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
-	defer resp.Body.close()
+	defer resp.Body.Close()
 	if strings.Contains(string(body), "Error code") {
 		fmt.Fprintf(w, fmt.Sprintf("{\"status\": \"fail\", \"error\": %s}", string(body)))
 		return
@@ -241,7 +239,7 @@ func changePassword(w http.ResponseWriter, r *http.Request) {
 	req.Header.Set("Content-Type", "application/json") // Set content-type to json
 	resp, _ := client.Do(req)                          // Execute request
 	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
-	defer resp.Body.close()
+	defer resp.Body.Close()
 	if strings.Contains(string(body), "Error code 66") {
 		fmt.Fprintf(w, string(body))
 		//fmt.Fprintf(w, "error")
@@ -273,7 +271,7 @@ func setExpireDate(w http.ResponseWriter, r *http.Request) {
 	req.Header.Set("Content-Type", "application/json") // Set content-type to json
 	resp, _ := client.Do(req)                          // Execute request
 	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
-	defer resp.Body.close()
+	defer resp.Body.Close()
 	fmt.Fprintf(w, string(body))
 }
 
@@ -300,6 +298,6 @@ func listUsers(w http.ResponseWriter, r *http.Request) {
 	req.Header.Set("Content-Type", "application/json") // Set content-type to json
 	resp, _ := client.Do(req)                          // Execute request
 	body, _ := ioutil.ReadAll(resp.Body)               // Read body to string
-	defer resp.Body.close()
+	defer resp.Body.Close()
 	fmt.Fprintf(w, string(body))
 }
