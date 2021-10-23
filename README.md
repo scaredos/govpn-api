@@ -13,3 +13,7 @@
 - To run with web management, try `./server run`
 - All documentation is available at [Documentation](https://github.com/scaredos/govpn-api/tree/main/docs)
 ![](https://i.imgur.com/vGmAqz2.gif)
+
+
+### Todo
+- Write a version of GoVPN-API that is completely client-side
