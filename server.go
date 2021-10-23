@@ -1,4 +1,4 @@
-// GoVPN-API | Production // Sale
+// GoVPN-API | Release
 package main
 
 import (
@@ -57,17 +57,12 @@ type EnumUser struct {
 var hubUser string       // SoftEther API username
 var hubPass string       // SoftEther API password
 var authEnc string       // Authorization header `Basic base64(username:password)`
-var userLimit int        // UnknownVPN Managment System
-var govpnUsername string // UnknownVPN Management System
-var govpnToken string    // UnknownVPN Management System
 
 func banner() {
 	fmt.Printf("GoVPN-API / SoftEther Management\n")
 	fmt.Printf("%s <options> <cmd>\n", os.Args[0])
 	fmt.Println("---\tOptions\t---")
 	fmt.Println("-p, --port\t Change service port of GoVPN-API\t(Required)")
-	fmt.Println("-u, --user\t Set GoVPN-API Username\t(Required)")
-	fmt.Println("-t, --token\t Set GoVPN-API Token\t(Required)")
 	fmt.Println("---\tcmd\t---")
 	fmt.Println("run\tRun the API & Web Server\t(Required)")
 	fmt.Println("runapi\tRun the API only\t(Required)")
@@ -85,34 +80,13 @@ func main() {
 		}
 		if strings.Contains(ch, "-p") || strings.Contains(ch, "--port") {
 			sport = os.Args[i+1]
-		} else if strings.Contains(ch, "-u") || strings.Contains(ch, "--user") {
-			govpnUsername = os.Args[i+1]
-		} else if strings.Contains(ch, "-t") || strings.Contains(ch, "--token") {
-			govpnToken = os.Args[i+1]
-		} else if strings.Contains(ch, "run") {
+		}else if strings.Contains(ch, "run") {
 			// Serves files for Web-panel
 			fs := http.FileServer(http.Dir("./files"))
 			http.Handle("/api/", http.StripPrefix("/api/", fs))
 		} else if strings.Contains(ch, "runapi") {
 			continue
 		}
-	}
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr}
-	url := fmt.Sprintf("http://govpnapi.unknownvpn.net:2052/api/v1/userCount?username=%s&token=%s", govpnUsername, govpnToken)
-	req, _ := http.NewRequest("GET", url, nil)
-	resp, err := client.Do(req) // Execute
-	defer resp.Body.close()
-	if err != nil {
-		fmt.Println(err)
-	}
-	body, _ := ioutil.ReadAll(resp.Body)
-	userLimit, _ = strconv.Atoi(string(body))
-	if userLimit == 0 {
-		fmt.Println("Incorrect user/token")
-		os.Exit(0)
 	}
 	fmt.Printf("running on localhost:%s\n", sport)
 
@@ -199,10 +173,6 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	userCount := getUserCount(serverip)
-	if userCount > userLimit {
-		fmt.Fprintf(w, "{\"status\": \"fail\", \"buy\": \"true\", \"error\": \"You exceeded the max users for your plan, purchase a higher plan to continue API Usage\"}")
-		return
-	} else {
 		url := fmt.Sprintf("https://%s/api", serverip)
 		client := &http.Client{Transport: tr}
 		currentTime := time.Now()
