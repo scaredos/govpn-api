@@ -4,18 +4,29 @@
 
 
 ### Installation
-- `git clone https://github.com/scaredos/govpn-api`
-- `cd govpn-api`
-- `go build server.go`
+```
+git clone https://github.com/scaredos/govpn-api
+cd govpn-api
+go build server.go
+```
 
-### Usage
-- To run only the API, try `./server runapi`
-- To run with web management:
--   - Try: `./server run`
--   - Visit `http://localhost:1337/api`
+### Usage (w/ Web Panel)
+```
+./server run
+```
+
+### Usage (only API)
+```
+./server runapi
+```
+
+- The application will now be available at [localhost:1337/api](http://localhost:1337/api)
+
+### Documentation
 - All documentation is available at [Documentation](https://github.com/scaredos/govpn-api/tree/main/docs)
+
 ![](https://i.imgur.com/vGmAqz2.gif)
 
 
 ### Todo
-- Write a version of GoVPN-API that is completely client-side
+- Move to vanilla javascript
